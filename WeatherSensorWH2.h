@@ -22,6 +22,9 @@ class WeatherSensorWH2
     bool acquired();
     int get_sensor_id();
     byte* get_packet();
+    byte* get_max_interval();
+    byte* get_min_interval();
+    unsigned int* get_mean_interval();
     byte calculate_crc();
     bool valid();
     int  get_temperature();
@@ -29,6 +32,10 @@ class WeatherSensorWH2
     byte get_humidity();
   private:
     byte _packet[5];
+    byte max_interval[2];
+    byte min_interval[2];
+    unsigned int mean_interval[2];
+    byte mean_interval_count[2];
     bool _acquired; 
     uint8_t _crc8( uint8_t *addr, uint8_t len);
 };

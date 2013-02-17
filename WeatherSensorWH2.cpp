@@ -9,6 +9,12 @@
   Thanks go to the authors of that project.
 */
 
+#define MIN_LENGTH_HIGH 17    /* 17 * ((OCR1A+1)/16) = 17 * 25 uS = 425 uS */
+#define MAX_LENGTH_HIGH 25    /* 25 * 25 uS = 625 uS */
+
+#define MIN_LENGTH_LOW 55   /* 55 * 25 uS = 1375 uS */
+#define MAX_LENGTH_LOW 70   /* 70 * 25 uS = 1750 uS */
+
 /* Added to provide compatibility with Arduino 1.0 and 0022 */
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
@@ -32,10 +38,10 @@ void WeatherSensorWH2::accept(byte interval)
   static byte packet_no, bit_no, history;
 
   // 1 is indicated by 500uS pulse
-  if (interval >= 17 && interval <= 25) {
+  if (interval >= MIN_LENGTH_HIGH && interval <= MAX_LENGTH_HIGH) {
     sample = 1;
   // 0 is indicated by ~1500us pulse
-  } else if (interval >= 55  && interval <= 70) {
+  } else if (interval >= MIN_LENGTH_LOW  && interval <= MAX_LENGTH_LOW) {
     sample = 0;    
   } else {
     state = 0;
@@ -66,6 +72,20 @@ void WeatherSensorWH2::accept(byte interval)
        bit_no = 1;
        _packet[0] = _packet[1] = _packet[2] = _packet[3] = _packet[4] = 0;
        // we've acquired the preamble
+       
+       min_interval[0] = min_interval[1] = MAX_LENGTH_LOW+1;
+       max_interval[0] = max_interval[1] = 0;
+       mean_interval[0] = mean_interval[1] = 0;
+       mean_interval_count[0] = mean_interval_count[1] = 0;
+
+       if (min_interval[sample] > interval) {
+         min_interval[sample] = interval;
+        }
+
+       if (max_interval[sample] < interval) {
+         max_interval[sample] = interval;
+       }
+       
        state = 2;
      }
     return;
@@ -77,6 +97,17 @@ void WeatherSensorWH2::accept(byte interval)
     if (sample == 1) {
       _packet[packet_no] |= 0x01;
     }
+    
+    if (min_interval[sample] > interval) {
+      min_interval[sample] = interval;
+    }
+
+    if (max_interval[sample] < interval) {
+      max_interval[sample] = interval;
+    }
+    
+    mean_interval[sample] = mean_interval[sample]+interval;
+    mean_interval_count[sample]++;
 
     bit_no ++;
     if(bit_no > 7) {
@@ -113,6 +144,25 @@ bool WeatherSensorWH2::valid()
 byte* WeatherSensorWH2::get_packet()
 {
   return _packet;
+}
+
+byte* WeatherSensorWH2::get_min_interval()
+{
+  return min_interval;
+}
+
+byte* WeatherSensorWH2::get_max_interval()
+{
+  return max_interval;
+}
+
+unsigned int* WeatherSensorWH2::get_mean_interval()
+{
+
+  mean_interval[0] = mean_interval[0]/mean_interval_count[0];
+  mean_interval[1] = mean_interval[1]/mean_interval_count[1];
+
+  return mean_interval;
 }
 
 int WeatherSensorWH2::get_sensor_id()
