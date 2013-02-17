@@ -9,11 +9,11 @@
   Thanks go to the authors of that project.
 */
 
-#define MIN_LENGTH_HIGH 17    /* 17 * ((OCR1A+1)/16) = 17 * 25 uS = 425 uS */
-#define MAX_LENGTH_HIGH 25    /* 25 * 25 uS = 625 uS */
+#define MIN_LENGTH_HIGH 13    /* 13 * ((OCR1A+1)/16) = 13 * 25 uS = 325 uS */
+#define MAX_LENGTH_HIGH 27    /* 27 * 25 uS = 675 uS */
 
-#define MIN_LENGTH_LOW 55   /* 55 * 25 uS = 1375 uS */
-#define MAX_LENGTH_LOW 70   /* 70 * 25 uS = 1750 uS */
+#define MIN_LENGTH_LOW 52   /* 52 * 25 uS = 1300 uS */
+#define MAX_LENGTH_LOW 68   /* 68 * 25 uS = 1700 uS */
 
 /* Added to provide compatibility with Arduino 1.0 and 0022 */
 #if defined(ARDUINO) && ARDUINO >= 100
