@@ -48,21 +48,66 @@ void setup() {
   pinMode(LED_PACKET, OUTPUT);
   pinMode(LED_ACTIVITY, OUTPUT);
   pinMode(RF_IN, INPUT);
-  
-  TCCR1A = 0x00;
-  TCCR1B = 0x09;
-  TCCR1C = 0x00;
-  OCR1A = 399;
-  TIMSK1 = 0x02;
-  
-  // enable interrupts
+
+  TCCR1A = 0
+//    | (1 << COM1A1) //compare output mode for channel A
+//    | (1 << COM1A0)
+//    | (1 << COM1B1) //compare output mode for channel B
+//    | (1 << COM1B0)
+//    | (1 << WGM11)  // waveform generation mode. 0000 = normal,
+//    | (1 << WGM10)  // 0001 = PWM phase correct 8bit
+      ;
+
+  TCCR1B = 0
+//    | (1 << ICNC1)  // input capture noise canceler
+//    | (1 << ICES1)  // input capture edge select, 1 = rising edge
+//    | (1 << WGM13)  // waveform generation mode.
+      | (1 << WGM12)
+//    | (1 << CS12)   // 000 = stopped, 001 = clk/1,
+//    | (1 << CS11)   // 010 = clk/8, 011 = clk/64
+      | (1 << CS10)   // 100 = clk/256, 101 = clk/1024
+      ;               // 110 = Clock source on T1, clock on falling edge
+                      // 111 = Clock source on T1, clock on rising edge
+
+  TCCR1C = 0
+//    | (1 << FOC1A)  // force output compare for channel A
+//    | (1 << FOC1B)  // force output compare for channel B
+      ;
+
+
+  OCR1A = 399; // 0...399, 0...399 -> Timer triggers every 400 cycles (400 / 16 MHz = 25 uS)
+
+  TIMSK1 = TIMSK1                 // don't throw away the old value
+//    | (1 << ICIE1)  // Counter 1 input capture interrupt enable
+//    | (1 << OCIE1B) // output compare b match interrupt enable
+      | (1 << OCIE1A) // output compare a match interrupt enable
+//    | (1 << TOIE1)  // counter1 overflow interrupt enable
+      ;
+
+// TIFR1 = TIFR1                   // not sure whether inactive is 0 or 1
+//    | (1 << ICF1)   // counter1 input capture flag
+//    | (1 << OCF1B)  // output compare b match flag
+//    | (1 << OCF1A)  // output compare a match flag
+//    | (1 << TOV1)   // counter 1 overflow flag
+//    ;
+
+// GTCCR = GTCCR
+//    | (1 << TSM)    // counter synchronization mode.
+//    | (1 << PSRSYNC) // prescaler reset
+//    ;
+
+ 
+  /* enable interrupts */
   sei();
 }
 
 void loop() {
   byte i;
   byte *packet;
-  
+  byte *min_interval;
+  byte *max_interval;
+  unsigned int *mean_interval;
+
   if (got_interval) {
     weather.accept(interval);  
     if (weather.acquired()) {
@@ -79,7 +124,25 @@ void loop() {
     
       Serial.print("Average spacing: ");
       Serial.println(average_interval, DEC);
-     
+  
+      min_interval = weather.get_min_interval();
+      max_interval = weather.get_max_interval();
+      mean_interval = weather.get_mean_interval();
+  
+      Serial.print("Pulse stats: Hi: ");
+      Serial.print(min_interval[1], DEC);
+      Serial.print(" - ");
+      Serial.print(max_interval[1], DEC);
+      Serial.print(" (~");
+      Serial.print(mean_interval[1], DEC);
+      Serial.print(" Mean), Lo: ");
+      Serial.print(min_interval[0], DEC);
+      Serial.print(" - ");
+      Serial.print(max_interval[0], DEC);
+      Serial.print(" (~");
+      Serial.print(mean_interval[0], DEC);
+      Serial.println(" Mean)");
+
       // flash green led to say got packet
       digitalWrite(LED_PACKET, HIGH);
       delay(100);
